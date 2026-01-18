@@ -1,0 +1,365 @@
+note
+	description: "[
+		Main facade class for QR code generation.
+		Provides simple API to generate QR codes from text data.
+
+		SPECIFICATION:
+		QR (Quick Response) codes are 2D barcodes that encode data in a
+		square matrix of dark/light modules. This class provides:
+		- Support for all 40 QR versions (21x21 to 177x177 modules)
+		- Four error correction levels (L/M/Q/H)
+		- Automatic mode detection (numeric/alphanumeric/byte)
+		- Automatic version selection based on data size
+		- Output to ASCII art or PBM image format
+
+		USAGE:
+			create qr.make
+			qr.set_data ("Hello World")
+			qr.generate
+			if qr.is_generated then
+				print (qr.to_ascii_art)
+			end
+
+		ERROR CORRECTION LEVELS:
+		- L (Level 1): ~7% recovery capacity - maximum data
+		- M (Level 2): ~15% recovery capacity - balanced (default)
+		- Q (Level 3): ~25% recovery capacity - high reliability
+		- H (Level 4): ~30% recovery capacity - maximum reliability
+
+		CONTRACT GUARANTEES:
+		- Data must be set before generating
+		- After successful generation, matrix is accessible
+		- ASCII/PBM output only available after generation
+		- Error messages indicate why generation failed
+	]"
+	author: "Larry Rix"
+	date: "$Date$"
+	revision: "$Revision$"
+
+class
+	SIMPLE_QR
+
+create
+	make,
+	make_with_level
+
+feature {NONE} -- Initialization
+
+	make
+			-- Create QR generator with default settings (auto version, M correction).
+		do
+			error_correction := Level_m
+			version := 0 -- auto-detect
+			create data.make_empty
+			create last_error.make_empty
+		ensure
+			default_correction: error_correction = Level_m
+			auto_version: version = 0
+			empty_data: data.is_empty
+			no_error: last_error.is_empty
+			not_generated: not is_generated
+		end
+
+	make_with_level (a_level: INTEGER)
+			-- Create with specific error correction level.
+		require
+			level_valid: a_level >= Level_l and a_level <= Level_h
+		do
+			error_correction := a_level
+			version := 0
+			create data.make_empty
+			create last_error.make_empty
+		ensure
+			correction_set: error_correction = a_level
+			auto_version: version = 0
+			empty_data: data.is_empty
+			no_error: last_error.is_empty
+			not_generated: not is_generated
+		end
+
+feature -- Access
+
+	data: STRING
+			-- The data to encode in the QR code
+
+	error_correction: INTEGER
+			-- Error correction level (1=L 7%, 2=M 15%, 3=Q 25%, 4=H 30%)
+
+	version: INTEGER
+			-- QR code version (1-40), 0 for auto-detect
+
+	matrix: detachable QR_MATRIX
+			-- Generated QR code matrix
+
+	last_error: STRING
+			-- Error message from last operation
+
+feature -- Status report
+
+	is_generated: BOOLEAN
+			-- Was QR code successfully generated?
+		do
+			Result := attached matrix
+		ensure
+			definition: Result = (matrix /= Void)
+		end
+
+	has_error: BOOLEAN
+			-- Did last operation produce an error?
+		do
+			Result := not last_error.is_empty
+		ensure
+			definition: Result = not last_error.is_empty
+		end
+
+	module_count: INTEGER
+			-- Number of modules (size) in generated QR code.
+		require
+			generated: is_generated
+		do
+			if attached matrix as m then
+				Result := m.size
+			end
+		ensure
+			positive: Result > 0
+			at_least_21: Result >= 21
+			at_most_177: Result <= 177
+		end
+
+feature -- Query
+
+	is_dark_module (a_row, a_col: INTEGER): BOOLEAN
+			-- Is module at (a_row, a_col) dark?
+		require
+			generated: is_generated
+			row_valid: a_row >= 1 and a_row <= module_count
+			col_valid: a_col >= 1 and a_col <= module_count
+		do
+			if attached matrix as m then
+				Result := m.is_dark (a_row, a_col)
+			end
+		end
+
+	to_ascii_art: STRING
+			-- Render QR code as ASCII art string.
+			-- Uses ## for dark modules, spaces for light.
+		require
+			generated: is_generated
+		local
+			l_row, l_col: INTEGER
+			l_size: INTEGER
+		do
+			create Result.make (1000)
+			if attached matrix as m then
+				l_size := m.size
+				-- Add quiet zone at top
+				Result.append_string (create {STRING}.make_filled (' ', l_size + 8))
+				Result.append_character ('%N')
+				from l_row := 1 until l_row > l_size loop
+					-- Quiet zone left
+					Result.append_string ("    ")
+					from l_col := 1 until l_col > l_size loop
+						if m.is_dark (l_row, l_col) then
+							Result.append_string ("##")
+						else
+							Result.append_string ("  ")
+						end
+						l_col := l_col + 1
+					end
+					-- Quiet zone right and newline
+					Result.append_string ("    %N")
+					l_row := l_row + 1
+				end
+				-- Quiet zone at bottom
+				Result.append_string (create {STRING}.make_filled (' ', l_size + 8))
+				Result.append_character ('%N')
+			end
+		ensure
+			result_not_empty: not Result.is_empty
+			has_newlines: Result.has ('%N')
+		end
+
+	to_pbm: STRING
+			-- Render QR code as PBM (portable bitmap) format string.
+			-- P1 format (ASCII plain PBM).
+		require
+			generated: is_generated
+		local
+			l_row, l_col: INTEGER
+			l_size: INTEGER
+		do
+			create Result.make (2000)
+			if attached matrix as m then
+				l_size := m.size
+				-- PBM header
+				Result.append_string ("P1%N")
+				Result.append_string ("# QR Code generated by simple_qr%N")
+				Result.append_integer (l_size)
+				Result.append_character (' ')
+				Result.append_integer (l_size)
+				Result.append_character ('%N')
+				-- Pixel data (1=black, 0=white)
+				from l_row := 1 until l_row > l_size loop
+					from l_col := 1 until l_col > l_size loop
+						if m.is_dark (l_row, l_col) then
+							Result.append_character ('1')
+						else
+							Result.append_character ('0')
+						end
+						if l_col < l_size then
+							Result.append_character (' ')
+						end
+						l_col := l_col + 1
+					end
+					Result.append_character ('%N')
+					l_row := l_row + 1
+				end
+			end
+		ensure
+			result_not_empty: not Result.is_empty
+			has_header: Result.starts_with ("P1")
+			has_dimensions: Result.has_substring (module_count.out)
+		end
+
+feature -- Element change
+
+	set_data (a_data: STRING)
+			-- Set the data to encode.
+		require
+			data_not_void: a_data /= Void
+		do
+			data := a_data
+			matrix := Void -- Invalidate any existing matrix
+			last_error.wipe_out
+		ensure
+			data_set: data = a_data
+			matrix_cleared: matrix = Void
+			error_cleared: last_error.is_empty
+		end
+
+	set_error_correction (a_level: INTEGER)
+			-- Set error correction level (1=L, 2=M, 3=Q, 4=H).
+		require
+			level_valid: a_level >= Level_l and a_level <= Level_h
+		do
+			error_correction := a_level
+			matrix := Void -- Invalidate any existing matrix
+		ensure
+			level_set: error_correction = a_level
+			matrix_cleared: matrix = Void
+		end
+
+	set_version (a_version: INTEGER)
+			-- Set explicit version (1-40) or 0 for auto-detect.
+		require
+			version_valid: a_version >= 0 and a_version <= 40
+		do
+			version := a_version
+			matrix := Void
+		ensure
+			version_set: version = a_version
+			matrix_cleared: matrix = Void
+		end
+
+	generate
+			-- Generate the QR code matrix from current data.
+		require
+			has_data: not data.is_empty
+		local
+			l_encoder: QR_ENCODER
+			l_version_calc: QR_VERSION
+			l_ec: QR_ERROR_CORRECTION
+			l_codewords: ARRAY [INTEGER]
+			l_ec_codewords: ARRAY [INTEGER]
+			l_final_data: ARRAY [INTEGER]
+			l_actual_version: INTEGER
+			l_mode: INTEGER
+		do
+			last_error.wipe_out
+			matrix := Void
+
+			-- Step 1: Create encoder and detect mode
+			create l_encoder.make
+			l_mode := l_encoder.detect_mode (data)
+
+			-- Step 2: Determine version
+			create l_version_calc.make
+			if version = 0 then
+				l_actual_version := l_version_calc.minimum_version (data, l_mode, error_correction)
+			else
+				l_actual_version := version
+			end
+
+			if l_actual_version < 1 or l_actual_version > 40 then
+				last_error := "Data too large for QR code"
+			else
+				-- Step 3: Encode data
+				l_encoder.encode (data, l_actual_version)
+				l_codewords := l_encoder.to_codewords
+
+				-- Step 4: Generate error correction
+				create l_ec.make (error_correction)
+				l_ec_codewords := l_ec.generate_codewords (l_codewords, l_actual_version)
+
+				-- Step 5: Interleave data and EC
+				l_final_data := l_ec.interleave_blocks (l_codewords, l_ec_codewords, l_actual_version)
+
+				-- Step 6: Create and populate matrix
+				create matrix.make (l_actual_version)
+				if attached matrix as m then
+					m.place_finder_patterns
+					m.place_alignment_patterns
+					m.place_timing_patterns
+					m.place_format_info (error_correction, 0) -- mask 0 initially
+					if l_actual_version >= 7 then
+						m.place_version_info (l_actual_version)
+					end
+					m.place_data (l_final_data)
+					m.apply_best_mask (error_correction)
+				end
+			end
+		ensure
+			generated_or_error: is_generated or has_error
+			generated_has_valid_size: is_generated implies module_count >= 21
+		end
+
+	save_pbm (a_path: STRING)
+			-- Save QR code to PBM file.
+		require
+			generated: is_generated
+			path_not_empty: not a_path.is_empty
+		local
+			l_file: SIMPLE_FILE
+		do
+			last_error.wipe_out
+			create l_file.make (a_path)
+			if l_file.write_text (to_pbm) then
+				-- Success
+			else
+				last_error := "Failed to write file: " + a_path
+			end
+		end
+
+feature -- Constants
+
+	Level_l: INTEGER = 1
+			-- Low error correction (7% recovery)
+
+	Level_m: INTEGER = 2
+			-- Medium error correction (15% recovery)
+
+	Level_q: INTEGER = 3
+			-- Quartile error correction (25% recovery)
+
+	Level_h: INTEGER = 4
+			-- High error correction (30% recovery)
+
+invariant
+	error_correction_valid: error_correction >= Level_l and error_correction <= Level_h
+	version_valid: version >= 0 and version <= 40
+	data_exists: data /= Void
+	last_error_exists: last_error /= Void
+	-- Generated matrix has correct properties
+	generated_matrix_valid: attached matrix as m implies (m.size >= 21 and m.size <= 177)
+
+end

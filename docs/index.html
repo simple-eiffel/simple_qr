@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>simple_qr - Pure Eiffel QR Code Generation</title>
+    <style>
+        :root { --primary: #2563eb; --secondary: #1e40af; --bg: #f8fafc; --text: #1e293b; --success: #22c55e; --warning: #f59e0b; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+        header { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 3rem 2rem; text-align: center; }
+        header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .tagline { opacity: 0.9; font-size: 1.2rem; margin-bottom: 1rem; }
+        .badges { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
+        .badge { padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.8rem; font-weight: 500; }
+        .badge-version { background: #22c55e; }
+        .badge-license { background: #eab308; color: #1e293b; }
+        .badge-tests { background: #22c55e; }
+        .badge-codegen { background: #8b5cf6; }
+        nav { background: white; border-bottom: 1px solid #e2e8f0; padding: 1rem; position: sticky; top: 0; z-index: 100; }
+        nav ul { list-style: none; display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; }
+        nav a { color: var(--text); text-decoration: none; font-weight: 500; }
+        nav a:hover { color: var(--primary); }
+        main { max-width: 1000px; margin: 0 auto; padding: 2rem; }
+        section { background: white; border-radius: 0.5rem; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        h2 { color: var(--primary); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e2e8f0; }
+        h3 { margin: 1.5rem 0 0.75rem; color: var(--secondary); }
+        h4 { margin: 1rem 0 0.5rem; }
+        p { margin-bottom: 1rem; }
+        ul, ol { margin: 1rem 0 1rem 1.5rem; }
+        li { margin-bottom: 0.5rem; }
+        pre { background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin: 1rem 0; }
+        code { font-family: 'Fira Code', 'Consolas', monospace; font-size: 0.9rem; }
+        .inline-code { background: #e2e8f0; padding: 0.125rem 0.375rem; border-radius: 0.25rem; color: var(--text); }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        th { background: #f1f5f9; font-weight: 600; }
+        .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1rem; }
+        .feature-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1.25rem; }
+        .feature-card h4 { color: var(--primary); margin-bottom: 0.5rem; font-size: 1.1rem; }
+        .contract-box { background: #fef3c7; border-left: 4px solid var(--warning); padding: 1rem; margin: 1rem 0; border-radius: 0 0.5rem 0.5rem 0; }
+        .contract-box h4 { color: #92400e; margin-bottom: 0.5rem; }
+        .test-box { background: #dcfce7; border-left: 4px solid var(--success); padding: 1rem; margin: 1rem 0; border-radius: 0 0.5rem 0.5rem 0; }
+        .test-box h4 { color: #166534; margin-bottom: 0.5rem; }
+        footer { text-align: center; padding: 2rem; color: #64748b; border-top: 1px solid #e2e8f0; }
+        .keyword { color: #c084fc; }
+        .type { color: #22d3ee; }
+        .string { color: #4ade80; }
+        .comment { color: #64748b; }
+        .highlight { background: #fef9c3; padding: 0.125rem 0.25rem; }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+        @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>simple_qr</h1>
+        <p class="tagline">Pure Eiffel QR Code Generation with Mathematically Verified Contracts</p>
+        <div class="badges">
+            <span class="badge badge-version">v1.0.0</span>
+            <span class="badge badge-tests">64 Tests Passing</span>
+            <span class="badge badge-license">MIT</span>
+            <span class="badge badge-codegen">Built with simple_codegen</span>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#quick-start">Quick Start</a></li>
+            <li><a href="#contracts">Contracts</a></li>
+            <li><a href="#testing">Testing</a></li>
+            <li><a href="#api">API Reference</a></li>
+            <li><a href="https://github.com/simple-eiffel/simple_qr">GitHub</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="overview">
+            <h2>Overview</h2>
+            <p>
+                <strong>simple_qr</strong> generates QR codes from text data using pure Eiffel.
+                It implements the complete QR code specification including all 40 versions,
+                four error correction levels, automatic mode detection, and Reed-Solomon
+                error correction.
+            </p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>Complete QR Specification</h4>
+                    <p>All 40 QR versions (21x21 to 177x177 modules), four EC levels (L/M/Q/H), three encoding modes (numeric, alphanumeric, byte).</p>
+                </div>
+                <div class="feature-card">
+                    <h4>100+ Verified Contracts</h4>
+                    <p>Every mathematical property, encoding rule, and QR spec requirement captured in executable contracts that prove correctness.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>64 Comprehensive Tests</h4>
+                    <p>Tests verify Galois field axioms, version calculations, encoding modes, error correction, matrix construction, and full pipeline.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Simple API</h4>
+                    <p>One facade class (SIMPLE_QR) with straightforward methods: set_data, generate, to_ascii_art. Complex internals, simple interface.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="quick-start">
+            <h2>Quick Start</h2>
+
+            <h3>Installation</h3>
+            <p>Set the ecosystem environment variable and add to your ECF:</p>
+<pre><code><span class="comment">-- Set SIMPLE_EIFFEL=D:\prod (or your installation path)</span>
+&lt;library name="simple_qr" location="$SIMPLE_EIFFEL/simple_qr/simple_qr.ecf"/&gt;</code></pre>
+
+            <h3>Basic Usage</h3>
+<pre><code><span class="keyword">local</span>
+    qr: <span class="type">SIMPLE_QR</span>
+<span class="keyword">do</span>
+    <span class="keyword">create</span> qr.make
+    qr.set_data (<span class="string">"Hello World"</span>)
+    qr.generate
+
+    <span class="keyword">if</span> qr.is_generated <span class="keyword">then</span>
+        print (qr.to_ascii_art)
+    <span class="keyword">end</span>
+<span class="keyword">end</span></code></pre>
+
+            <h3>With Error Correction</h3>
+<pre><code><span class="keyword">local</span>
+    qr: <span class="type">SIMPLE_QR</span>
+<span class="keyword">do</span>
+    <span class="comment">-- Use high error correction (30% recovery)</span>
+    <span class="keyword">create</span> qr.make_with_level (4)  <span class="comment">-- Level H</span>
+    qr.set_data (<span class="string">"https://example.com"</span>)
+    qr.generate
+
+    <span class="comment">-- Save to PBM image file</span>
+    qr.save_pbm (<span class="string">"qrcode.pbm"</span>)
+<span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="contracts">
+            <h2>Design by Contract: Proven Correctness</h2>
+
+            <p>
+                What makes simple_qr special is its <strong>aggressive use of Design by Contract</strong>.
+                Every class has contracts that capture the mathematical and logical specifications.
+                These aren't just documentation&mdash;they're executable code that verifies correctness
+                on every operation.
+            </p>
+
+            <div class="contract-box">
+                <h4>Why Contracts Matter</h4>
+                <ul>
+                    <li><strong>Specification as Code</strong> &ndash; Contracts ARE the specification. Read <code class="inline-code">ensure</code> clauses to understand guarantees.</li>
+                    <li><strong>Catches Edge Cases</strong> &ndash; Contracts run on EVERY call, not just test cases.</li>
+                    <li><strong>Self-Documenting</strong> &ndash; <code class="inline-code">require</code> = valid input, <code class="inline-code">ensure</code> = guaranteed output.</li>
+                    <li><strong>Mathematical Verification</strong> &ndash; Verify properties like commutativity and identity, not just sample outputs.</li>
+                </ul>
+            </div>
+
+            <h3>Galois Field Contracts (QR_GALOIS)</h3>
+            <p>Reed-Solomon error correction requires arithmetic in GF(2^8). Our contracts verify field axioms:</p>
+<pre><code>add (a_x, a_y: <span class="type">INTEGER</span>): <span class="type">INTEGER</span>
+    <span class="keyword">require</span>
+        x_in_field: a_x >= 0 <span class="keyword">and</span> a_x <= 255
+        y_in_field: a_y >= 0 <span class="keyword">and</span> a_y <= 255
+    <span class="keyword">ensure</span>
+        result_in_field: Result >= 0 <span class="keyword">and</span> Result <= 255
+        commutative: Result = a_y.bit_xor (a_x)
+        additive_identity_x: a_y = 0 <span class="keyword">implies</span> Result = a_x
+        self_inverse: a_x = a_y <span class="keyword">implies</span> Result = 0</code></pre>
+
+            <h3>Matrix Construction Contracts (QR_MATRIX)</h3>
+            <p>Contracts verify the QR specification is followed exactly:</p>
+<pre><code>make (a_version: <span class="type">INTEGER</span>)
+    <span class="keyword">require</span>
+        version_valid: a_version >= 1 <span class="keyword">and</span> a_version <= 40
+    <span class="keyword">ensure</span>
+        size_correct: size = 17 + (a_version * 4)
+        all_modules_light: <span class="keyword">across</span> 1 |..| size <span class="keyword">as</span> r <span class="keyword">all</span>
+            <span class="keyword">across</span> 1 |..| size <span class="keyword">as</span> c <span class="keyword">all not</span> modules.item (r, c) <span class="keyword">end end</span>
+
+place_finder_patterns
+    <span class="keyword">ensure</span>
+        top_left_center_dark: modules.item (4, 4)
+        top_right_center_dark: modules.item (4, size - 3)
+        bottom_left_center_dark: modules.item (size - 3, 4)</code></pre>
+
+            <h3>Class Invariants</h3>
+            <p>Every class maintains invariants that can never be violated:</p>
+<pre><code><span class="keyword">invariant</span>
+    <span class="comment">-- SIMPLE_QR: State always valid</span>
+    error_correction_valid: error_correction >= Level_l <span class="keyword">and</span> error_correction <= Level_h
+    version_valid: version >= 0 <span class="keyword">and</span> version <= 40
+    generated_matrix_valid: <span class="keyword">attached</span> matrix <span class="keyword">as</span> m <span class="keyword">implies</span> (m.size >= 21 <span class="keyword">and</span> m.size <= 177)
+
+    <span class="comment">-- QR_GALOIS: Lookup tables sized correctly</span>
+    exp_table_size: exp_table.count = 512
+    log_table_size: log_table.count = 256
+
+    <span class="comment">-- QR_MATRIX: Matrix dimensions consistent</span>
+    size_formula: size = 17 + (version * 4)
+    modules_square: modules.height = size <span class="keyword">and</span> modules.width = size</code></pre>
+        </section>
+
+        <section id="testing">
+            <h2>Comprehensive Test Suite</h2>
+
+            <p>
+                64 tests verify every component of the library. Tests are organized to prove
+                mathematical properties, verify boundary conditions, and exercise the complete
+                QR generation pipeline.
+            </p>
+
+            <div class="test-box">
+                <h4>Test Results: 64 Passing</h4>
+                <p>All tests pass with the strengthened contracts enabled. Run tests with:</p>
+<pre><code>cd simple_qr
+ec.exe -batch -config simple_qr.ecf -target simple_qr_tests -c_compile
+./EIFGENs/simple_qr_tests/W_code/simple_qr.exe</code></pre>
+            </div>
+
+            <h3>Test Coverage by Component</h3>
+            <table>
+                <thead>
+                    <tr><th>Component</th><th>Tests</th><th>What's Verified</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code class="inline-code">QR_GALOIS</code></td>
+                        <td>12</td>
+                        <td>Field axioms: additive identity, additive inverse, commutativity, multiplicative identity, multiplicative zero, inverse property, exp/log relationship</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">QR_VERSION</code></td>
+                        <td>8</td>
+                        <td>Module count formula (17+v*4), capacity monotonicity, EC level ordering, mode efficiency ordering, minimum version calculation</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">QR_ENCODER</code></td>
+                        <td>8</td>
+                        <td>Numeric/alphanumeric/byte mode detection, encoding correctness, byte alignment, codeword generation, version effects on count bits</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">QR_ERROR_CORRECTION</code></td>
+                        <td>5</td>
+                        <td>Generator polynomial length, EC codewords non-zero, codewords in GF(2^8) range, interleaving totals, EC level differences</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">QR_MATRIX</code></td>
+                        <td>9</td>
+                        <td>Size formula, finder pattern positions, finder pattern center, timing pattern alternation, reserved areas, mask patterns, dark module, v1/v40 boundaries</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">SIMPLE_QR</code></td>
+                        <td>22</td>
+                        <td>Default creation, EC level creation, data setting, matrix clearing, all EC levels, ASCII art output, PBM output, module access, version auto-selection, edge cases (single char, URLs, vCard), determinism</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Sample Test: Galois Field Axioms</h3>
+<pre><code>test_galois_additive_identity
+        <span class="comment">-- Test: a + 0 = a for all a (XOR with 0 is identity)</span>
+    <span class="keyword">local</span>
+        g: <span class="type">QR_GALOIS</span>
+        i: <span class="type">INTEGER</span>
+    <span class="keyword">do</span>
+        <span class="keyword">create</span> g.make
+        <span class="keyword">from</span> i := 0 <span class="keyword">until</span> i > 255 <span class="keyword">loop</span>
+            assert_equal (<span class="string">"add_zero_"</span> + i.out, i, g.add (i, 0))
+            i := i + 1
+        <span class="keyword">end</span>
+    <span class="keyword">end</span></code></pre>
+        </section>
+
+        <section id="api">
+            <h2>API Reference</h2>
+
+            <h3>SIMPLE_QR (Main Facade)</h3>
+            <p>The primary class for QR code generation. Use this for all typical operations.</p>
+            <table>
+                <thead>
+                    <tr><th>Feature</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code class="inline-code">make</code></td><td>Create with default settings (auto version, M correction)</td></tr>
+                    <tr><td><code class="inline-code">make_with_level (level)</code></td><td>Create with specific EC level (1-4)</td></tr>
+                    <tr><td><code class="inline-code">set_data (text)</code></td><td>Set data to encode</td></tr>
+                    <tr><td><code class="inline-code">set_error_correction (level)</code></td><td>Set EC level: L=1, M=2, Q=3, H=4</td></tr>
+                    <tr><td><code class="inline-code">set_version (v)</code></td><td>Set explicit version (1-40) or 0 for auto</td></tr>
+                    <tr><td><code class="inline-code">generate</code></td><td>Generate the QR code matrix</td></tr>
+                    <tr><td><code class="inline-code">is_generated</code></td><td>Was generation successful?</td></tr>
+                    <tr><td><code class="inline-code">has_error</code></td><td>Did an error occur?</td></tr>
+                    <tr><td><code class="inline-code">last_error</code></td><td>Error message if generation failed</td></tr>
+                    <tr><td><code class="inline-code">module_count</code></td><td>Size of generated QR (21-177)</td></tr>
+                    <tr><td><code class="inline-code">is_dark_module (row, col)</code></td><td>Query individual module state</td></tr>
+                    <tr><td><code class="inline-code">to_ascii_art</code></td><td>Render as ASCII art string</td></tr>
+                    <tr><td><code class="inline-code">to_pbm</code></td><td>Render as PBM image format</td></tr>
+                    <tr><td><code class="inline-code">save_pbm (path)</code></td><td>Save to PBM file</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Error Correction Levels</h3>
+            <table>
+                <thead>
+                    <tr><th>Level</th><th>Constant</th><th>Recovery</th><th>Best For</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>L</td><td><code class="inline-code">Level_l = 1</code></td><td>~7%</td><td>Maximum data capacity</td></tr>
+                    <tr><td>M</td><td><code class="inline-code">Level_m = 2</code></td><td>~15%</td><td>Balanced (default)</td></tr>
+                    <tr><td>Q</td><td><code class="inline-code">Level_q = 3</code></td><td>~25%</td><td>Higher reliability</td></tr>
+                    <tr><td>H</td><td><code class="inline-code">Level_h = 4</code></td><td>~30%</td><td>Maximum reliability</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Internal Classes</h3>
+            <p>These classes are used internally but can be accessed for advanced use cases:</p>
+
+            <div class="two-col">
+                <div>
+                    <h4>QR_ENCODER</h4>
+                    <p>Encodes data into QR bit stream. Handles numeric, alphanumeric, and byte modes.</p>
+                    <ul>
+                        <li><code class="inline-code">detect_mode (data)</code> &ndash; Optimal mode for data</li>
+                        <li><code class="inline-code">encode (data, version)</code> &ndash; Encode to bits</li>
+                        <li><code class="inline-code">to_codewords</code> &ndash; Convert to 8-bit codewords</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>QR_VERSION</h4>
+                    <p>Version and capacity calculations for all 40 QR versions.</p>
+                    <ul>
+                        <li><code class="inline-code">module_count (v)</code> &ndash; Size for version</li>
+                        <li><code class="inline-code">minimum_version (data, mode, ec)</code> &ndash; Find version</li>
+                        <li><code class="inline-code">character_capacity (v, mode, ec)</code> &ndash; Max chars</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>QR_GALOIS</h4>
+                    <p>Galois Field GF(2^8) arithmetic for Reed-Solomon.</p>
+                    <ul>
+                        <li><code class="inline-code">add (x, y)</code> &ndash; XOR addition</li>
+                        <li><code class="inline-code">multiply (x, y)</code> &ndash; Field multiplication</li>
+                        <li><code class="inline-code">inverse (x)</code> &ndash; Multiplicative inverse</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>QR_ERROR_CORRECTION</h4>
+                    <p>Reed-Solomon error correction codeword generation.</p>
+                    <ul>
+                        <li><code class="inline-code">generate_codewords (data, v)</code> &ndash; EC codewords</li>
+                        <li><code class="inline-code">interleave_blocks (data, ec, v)</code> &ndash; Combine</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="architecture">
+            <h2>Architecture</h2>
+<pre><code>simple_qr/
+├── src/
+│   ├── simple_qr.e           <span class="comment">-- Main facade (public API)</span>
+│   ├── qr_encoder.e          <span class="comment">-- Data encoding (numeric/alphanumeric/byte)</span>
+│   ├── qr_error_correction.e <span class="comment">-- Reed-Solomon EC generation</span>
+│   ├── qr_galois.e           <span class="comment">-- GF(2^8) field arithmetic</span>
+│   ├── qr_matrix.e           <span class="comment">-- QR matrix construction and masking</span>
+│   └── qr_version.e          <span class="comment">-- Version/capacity calculations</span>
+├── testing/
+│   ├── lib_tests.e           <span class="comment">-- 64 comprehensive tests</span>
+│   └── test_app.e            <span class="comment">-- Test runner</span>
+├── docs/
+│   └── index.html            <span class="comment">-- This documentation</span>
+└── simple_qr.ecf             <span class="comment">-- EiffelStudio project file</span></code></pre>
+        </section>
+    </main>
+
+    <footer>
+        <p><strong>simple_qr</strong> is part of the <a href="https://github.com/simple-eiffel">simple_*</a> ecosystem</p>
+        <p>Copyright &copy; 2024-2025 Larry Rix. MIT License.</p>
+    </footer>
+</body>
+</html>

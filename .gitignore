@@ -1,0 +1,12 @@
+# Eiffel build artifacts
+EIFGENs/
+.eiffel_lsp/
+
+# IDE
+.vscode/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
