@@ -9,4 +9,6 @@ EIFGENs/
 
 # OS
 .DS_Store
-Thumbs.db
+Thumbs.db*.melted
+*.epr
+*.log
