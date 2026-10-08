@@ -15,7 +15,6 @@ feature -- Input Attack Tests
 			-- Test that empty string is rejected by precondition.
 		local
 			l_qr: SIMPLE_QR
-			l_caught: BOOLEAN
 		do
 			create l_qr.make
 			-- Empty string should violate precondition (not empty)
