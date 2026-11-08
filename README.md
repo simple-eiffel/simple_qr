@@ -11,6 +11,7 @@
 [![Design by Contract](https://img.shields.io/badge/DbC-enforced-orange.svg)]()
 [![Tests](https://img.shields.io/badge/Tests-64%20passing-brightgreen.svg)]()
 [![Built with simple_codegen](https://img.shields.io/badge/Built_with-simple__codegen-blueviolet.svg)](https://github.com/simple-eiffel/simple_code)
+![Windows: tests pass](https://img.shields.io/badge/Windows-tests%20pass-0078D6?logo=windows&logoColor=white) ![Linux: tests pass](https://img.shields.io/badge/Linux-tests%20pass-FCC624?logo=linux&logoColor=black) ![macOS: tests pass](https://img.shields.io/badge/macOS-tests%20pass-000000?logo=apple&logoColor=white)
 
 **Pure Eiffel QR code generation with mathematically verified contracts.**
 
